@@ -202,13 +202,24 @@ export default function VideoExport({ audioFile, sync, isReady, svgContainerRef,
         await new Promise<void>((resolve, reject) => {
           const img = new Image()
           img.onload = () => {
-            // Draw avatar aligned to bottom center, 15% larger (matches preview)
-            const baseScale = Math.min(width / img.naturalWidth, height / img.naturalHeight)
-            const scale = baseScale * 1.15
-            const dw = img.naturalWidth * scale
-            const dh = img.naturalHeight * scale
+            // Match preview: avatar fills width, scale(1.15), transformOrigin bottom center
+            // SVG native size: 264×280
+            const svgW = 264
+            const svgH = 280
+            const svgAspect = svgW / svgH
+
+            // Fill width first (like CSS w-full on the SVG)
+            const fitW = width
+            const fitH = fitW / svgAspect
+
+            // Apply 1.15x scale from bottom center (like CSS transform)
+            const scale = 1.15
+            const dw = fitW * scale
+            const dh = fitH * scale
+
+            // Anchor to bottom center — top may overflow (canvas clips automatically)
             const dx = (width - dw) / 2
-            const dy = height - dh // align to bottom
+            const dy = height - dh  // negative = top clipped, which is correct
             ctx.drawImage(img, dx, dy, dw, dh)
             
             URL.revokeObjectURL(url)
